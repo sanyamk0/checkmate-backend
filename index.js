@@ -5,6 +5,7 @@ import userRouter from "./routes/user.js";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import { v4 as uuidv4 } from "uuid";
 
 const app = express();
 app.use(express.json()); // Use JSON parsing middleware to handle JSON requests
@@ -20,11 +21,17 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
   console.log(`User Connected ${socket.id}`);
-  socket.on("created", (data) => {
-    console.log(data);
+
+  socket.on("create", (name) => {
+    // Generate a random ID
+    const randomId = uuidv4();
+    socket.emit("create", { name, randomId });
   });
-  socket.on("joined", (data) => {
-    console.log(data);
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log(`User Disconnected ${socket.id}`);
+    // Additional cleanup or logic for disconnection can be added here
   });
 });
 
