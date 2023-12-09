@@ -19,19 +19,43 @@ const io = new Server(server, {
   },
 });
 
+const rooms = {};
 io.on("connection", (socket) => {
   console.log(`User Connected ${socket.id}`);
 
   socket.on("create", (name) => {
     // Generate a random ID
     const randomId = uuidv4();
+    socket.join(randomId);
+    rooms[randomId] = [socket.id]; // Store the socket IDs for users in the room
     socket.emit("create", { name, randomId });
+  });
+
+  socket.on("join-game", (gameId) => {
+    const room = rooms[gameId];
+    if (room && room.length === 1) {
+      socket.join(gameId);
+      room.push(socket.id); // Add the second user to the room
+      io.to(gameId).emit("secondUserJoined");
+    } else {
+      socket.emit("roomFull");
+    }
   });
 
   // Handle disconnection
   socket.on("disconnect", () => {
-    console.log(`User Disconnected ${socket.id}`);
-    // Additional cleanup or logic for disconnection can be added here
+    // Handle disconnect logic, leave rooms, etc.
+    // Also, remove the room from the rooms object if it becomes empty
+    for (const gameId in rooms) {
+      const index = rooms[gameId].indexOf(socket.id);
+      if (index !== -1) {
+        rooms[gameId].splice(index, 1);
+        if (rooms[gameId].length === 0) {
+          delete rooms[gameId];
+        }
+        break;
+      }
+    }
   });
 });
 
