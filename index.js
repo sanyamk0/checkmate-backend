@@ -36,10 +36,14 @@ io.on("connection", (socket) => {
     if (room && room.length === 1) {
       socket.join(gameId);
       room.push(socket.id); // Add the second user to the room
-      io.to(gameId).emit("secondUserJoined");
+      io.to(gameId).emit("secondUserJoined", { gameId });
     } else {
       socket.emit("roomFull");
     }
+  });
+
+  socket.on("play-move", ({ playedPiece, destination, gameId }) => {
+    socket.to(gameId).emit("play-move", { playedPiece, destination });
   });
 
   // Handle disconnection
